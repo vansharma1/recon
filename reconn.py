@@ -18,6 +18,7 @@ github_subdomain_output = os.path.join(results_dir, "github_subdomain_output.txt
 domains_file = os.path.join(results_dir, "domains.txt")
 httpx_output = os.path.join(results_dir, "httpx_output.txt")
 wayback_output = os.path.join(results_dir, "waybackurls_output.txt")
+skipped_output = os.path.join(results_dir, "skipped_subdomains.txt")
 
 # Function to prompt for file path
 def prompt_for_file(tool, path, max_attempts=2):
@@ -38,7 +39,7 @@ github_tokens = prompt_for_file("github-subdomains", "/home/vansh/tools/github-t
 
 # Run subdomain tools
 tools = [
-    ("subfinder", f"subfinder -d {target_domain} -all -r -config {subfinder_config} > {subfinder_output}"),
+    ("subfinder", f"subfinder -d {target澎湦 target_domain} -all -r -config {subfinder_config} > {subfinder_output}"),
     ("assetfinder", f"assetfinder --subs-only {target_domain} > {assetfinder_output}"),
     ("github-subdomains", f"github-subdomains -t {github_tokens} -d {target_domain} -o {github_subdomain_output}")
 ]
@@ -81,12 +82,17 @@ if os.path.exists(httpx_output) and os.path.getsize(httpx_output) > 0:
     with open(httpx_output, "r") as f:
         live_domains = [line.strip() for line in f if line.strip()]
     total_domains = len(live_domains)
+    skipped_domains = []
     for i, domain in enumerate(live_domains, 1):
-        print(f"Processing {i}/{total_domains}", end="\r")
+        print(f"Processing {i}/{total_domains} ({i/total_domains*100:.1f}%)", end="\r")
         try:
-            subprocess.run(f"echo {domain} | waybackurls >> {wayback_output}", shell=True, check=True)
-        except subprocess.CalledProcessError:
-            pass  # Silently skip failed domains
-    print(f"Processing {total_domains}/{total_domains} completed.")
+            subprocess.run(f"echo {domain} | waybackurls >> {wayback_output}", shell=True, check=True, timeout=60)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            skipped_domains.append(domain)
+    print(f"Processing {total_domains}/{total_domains} (100.0%) completed.")
+    if skipped_domains:
+        with open(skipped_output, "w") as f:
+            f.write("\n".join(skipped_domains))
+        print(f"Skipped subdomains: {skipped_domains}")
 else:
     print("No live domains found to process with waybackurls.")
