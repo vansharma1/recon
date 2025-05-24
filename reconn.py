@@ -39,7 +39,7 @@ github_tokens = prompt_for_file("github-subdomains", "/home/vansh/tools/github-t
 
 # Run subdomain tools
 tools = [
-    ("subfinder", f"subfinder -d {target澎湦 target_domain} -all -r -config {subfinder_config} > {subfinder_output}"),
+    ("subfinder", f"subfinder -d {target_domain} -all -r -config {subfinder_config} > {subfinder_output}"),
     ("assetfinder", f"assetfinder --subs-only {target_domain} > {assetfinder_output}"),
     ("github-subdomains", f"github-subdomains -t {github_tokens} -d {target_domain} -o {github_subdomain_output}")
 ]
